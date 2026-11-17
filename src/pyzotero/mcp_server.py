@@ -627,7 +627,7 @@ def export_bibtex(keys: list[str]) -> str:
         if isinstance(result, bytes):
             parts.append(result.decode("utf-8").strip())
         else:
-            parts.append(bibtexparser.dumps(result).strip())
+            parts.append(bibtexparser.write_string(result).strip())
     bibtex = "\n\n".join(p for p in parts if p)
     return _json({"count": len(parse_bibtex(bibtex)), "bibtex": bibtex})
 
@@ -1529,9 +1529,11 @@ def _register_import_tools(add: AddTool) -> None:
         converted = [item for *_, item in lookups if isinstance(item, dict)]
         created = iter(_create_imported(zot, converted, collections, tags, if_exists))
         results = [
-            {"identifier": text, "type": kind, **next(created)}
-            if isinstance(item, dict)
-            else {"identifier": text, "status": "failed", "error": item}
+            (
+                {"identifier": text, "type": kind, **next(created)}
+                if isinstance(item, dict)
+                else {"identifier": text, "status": "failed", "error": item}
+            )
             for text, kind, _, item in lookups
         ]
         if attach_pdf:

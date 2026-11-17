@@ -13,13 +13,11 @@ import pytest
 from pyzotero._helpers import save_local_key
 from pyzotero._import import DOILookupError
 
-
 # Skip only when the optional mcp extra is absent. Import the module itself
 # directly, so that an incompatible mcp release fails the tests instead of
 # skipping them.
 pytest.importorskip("mcp", reason="mcp extra is not installed")
 from pyzotero import mcp_server
-
 
 # Fixtures
 ITEM_FIXTURE = {
@@ -863,11 +861,20 @@ class TestExportBibtex:
         import bibtexparser
 
         def fake_items(**kwargs):
-            db = bibtexparser.bibdatabase.BibDatabase()
-            db.entries = [
-                {"ENTRYTYPE": "article", "ID": k, "title": f"T {k}"}
-                for k in kwargs["itemKey"].split(",")
-            ]
+            db = bibtexparser.library.Library()
+
+            for k in kwargs["itemKey"].split(","):
+                db.add(
+                    [
+                        bibtexparser.model.Entry(
+                            entry_type="article",
+                            key=k,
+                            fields=[
+                                bibtexparser.model.Field(key="title", value=f"T {k}")
+                            ],
+                        )
+                    ]
+                )
             return db
 
         mock_zot.items.side_effect = fake_items

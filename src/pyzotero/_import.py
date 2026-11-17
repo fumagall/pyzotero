@@ -14,9 +14,13 @@ from pathlib import Path
 from typing import Any
 
 import bibtexparser
+from bibtexparser.middlewares import MonthLongStringMiddleware, NormalizeFieldKeys
 import httpx2
-from bibtexparser.customization import splitname
-from bibtexparser.latexenc import latex_to_unicode
+from bibtexparser.middlewares.names import (
+    parse_single_name_into_parts,
+    InvalidNameError,
+)
+from pylatexenc.latex2text import LatexNodes2Text
 
 from pyzotero import __version__
 from pyzotero._helpers import normalise_doi
@@ -460,7 +464,9 @@ def csl_to_zotero(csl: dict[str, Any]) -> dict[str, Any]:
 
 def _clean(value: str) -> str:
     """Decode LaTeX to Unicode, drop grouping braces and collapse whitespace."""
-    text = latex_to_unicode(value).replace("{", "").replace("}", "")
+    text = LatexNodes2Text(
+        keep_braced_groups=False,
+    ).latex_to_text(value)
     return " ".join(text.split())
 
 
@@ -495,20 +501,22 @@ def _is_braced(value: str) -> bool:
 def _bibtex_names(value: str, creator_type: str) -> list[dict[str, str]]:
     """Convert a raw BibTeX name list ("A and B") to Zotero creators."""
     creators = []
-    for raw in _split_names(value):
+    for raw in _split_names(
+        value
+    ):  # todo could be replaced with split_multiple_persons_names from bibtexparser
         # A name in one outer brace pair is a corporate name. Keep it whole.
         if _is_braced(raw):
             creators.append({"creatorType": creator_type, "name": _clean(raw)})
             continue
         try:
-            parts = splitname(raw, strict_mode=False)
-        except bibtexparser.customization.InvalidName:
+            parts = parse_single_name_into_parts(raw, strict=False)
+        except InvalidNameError:
             creators.append({"creatorType": creator_type, "name": _clean(raw)})
             continue
-        last = " ".join(parts["von"] + parts["last"])
-        if parts["jr"]:
-            last = f"{last}, {' '.join(parts['jr'])}"
-        first = " ".join(parts["first"])
+        last = " ".join(parts.von + parts.last)
+        if parts.jr:
+            last = f"{last}, {' '.join(parts.jr)}"
+        first = " ".join(parts.first)
         if first:
             creators.append(
                 {
@@ -586,10 +594,10 @@ def bibtex_to_zotero(entry: dict[str, str]) -> dict[str, Any]:  # noqa: PLR0912
 
 def parse_bibtex(text: str) -> list[dict[str, str]]:
     """Parse BibTeX source into a list of entries, with month macros expanded."""
-    parser = bibtexparser.bparser.BibTexParser(
-        common_strings=True, ignore_nonstandard_types=False
+    library = bibtexparser.parse_string(
+        text, append_middleware=[NormalizeFieldKeys(), MonthLongStringMiddleware()]
     )
-    return parser.parse(text).entries
+    return [dict(entry) for entry in library.entries]
 
 
 def fit_to_schema(

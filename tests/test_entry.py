@@ -34,6 +34,8 @@ def test_cli_delegates_when_extra_present():
 
 def test_mcp_delegates_when_extra_present():
     pytest.importorskip("mcp")
+    import pyzotero.mcp_server  # Ensures the submodule is loaded on pyzotero
+
     with patch("pyzotero.mcp_server.main") as main:
         _entry.mcp()
     main.assert_called_once_with()

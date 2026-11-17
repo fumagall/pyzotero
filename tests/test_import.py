@@ -238,7 +238,7 @@ class TestBibTeX:
         assert item["title"] == "Deep Learning"
         assert item["publicationTitle"] == "Nature"
         assert item["issue"] == "7553"
-        assert item["pages"] == "436-444"
+        assert item["pages"] == "436–444"
         assert item["date"] == "2015-05"
         assert item["DOI"] == "10.1038/nature14539"
         assert item["extra"] == "Géza's note"

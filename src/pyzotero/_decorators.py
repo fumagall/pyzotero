@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import urlencode
 
 import bibtexparser
+from bibtexparser.middlewares import MonthLongStringMiddleware, NormalizeFieldKeys
 import feedparser
 import httpx2
 
@@ -126,11 +127,9 @@ def _extract_zip_attachment(retrieved: httpx2.Response) -> bytes:
 
 def _parse_bibtex(text: str) -> Any:
     """Parse a BibTeX response body into a BibDatabase."""
-    parser = bibtexparser.bparser.BibTexParser(
-        common_strings=True,
-        ignore_nonstandard_types=False,
+    return bibtexparser.parse_string(
+        text, append_middleware=[NormalizeFieldKeys(), MonthLongStringMiddleware()]
     )
-    return parser.parse(text)
 
 
 def retrieve(func: Callable[..., str]) -> Callable[..., Any]:

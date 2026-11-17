@@ -1350,7 +1350,8 @@ doc = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bibtexparser", specifier = ">=1.4.3,<2.0.0" },
+    { name = "bibtexparser", specifier = ">=2.0.0" },
+    { name = "pylatexenc", specifier = "~=2.10" }, # same as bibtexparser V2
     { name = "click", marker = "extra == 'cli'", specifier = ">=8.0.0" },
     { name = "feedparser", specifier = ">=6.0.12" },
     { name = "httpx2", specifier = ">=2.12.0" },
